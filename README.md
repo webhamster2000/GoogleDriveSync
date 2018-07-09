@@ -11,7 +11,7 @@ How to use:
      * A very good get started page can be found at https://developers.google.com/drive/web/quickstart/python
        and a step-by-step process at https://github.com/jay0lee/GAM/wiki/Creating-client_secrets.json-and-oauth2service.json
      * place this file into <GoogleDriveSync-path>
- * call python <GoogleDriveSync-path>/drive.py
+ * call python drive.py
  * wait until the script finished downloading. Please be patient, it can take a while.
 
 You will be asked for login information for your google account on first run.
