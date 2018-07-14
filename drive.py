@@ -57,7 +57,8 @@ def getObjects():
             files = service.files().list(**param).execute()
             items = files["items"]
             for item in items:
-                if item["labels"]["trashed"] == True: continue
+                if item["labels"]["trashed"] == True:
+                    continue
                 result[item["id"]] = item
             page_token = files.get('nextPageToken')
             if not page_token:
@@ -118,6 +119,7 @@ def main():
     for id in files:
         try:
             if files[id]["title"].strip() == "": continue
+            if files[id]["hidden"] == True: continue
             parents = files[id]["parents"]
             try:
                 name = getPath(dirs, parents)
@@ -136,6 +138,8 @@ def main():
                 if "SharedWithMe" not in name:
                     name = "." + os.sep + "GoogleDocs" + os.sep
                 if "exportLinks" not in files[id]:
+                    if files[id]["mimeType"].startswith("application/vnd.google-apps.map"): continue
+                    if files[id]["mimeType"].startswith("application/vnd.google-apps.form"): continue                 
                     print "No PDF export found for", files[id]["title"], "(mime:", files[id]["mimeType"], ") .. skip"
                     continue
                 url = files[id]["exportLinks"]["application/pdf"]
