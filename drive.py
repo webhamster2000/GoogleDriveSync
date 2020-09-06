@@ -1,6 +1,6 @@
 import httplib2
 import os
-from apiclient import discovery
+from googleapiclient import discovery
 from oauth2client import client
 from oauth2client import tools
 from oauth2client.file import Storage
@@ -33,7 +33,7 @@ def get_credentials():
             credentials = tools.run_flow(flow, store, flags)
         else: # Needed only for compatibility with Python 2.6
             credentials = tools.run(flow, store)
-        print 'Storing credentials to ' + credential_path
+        print ('Storing credentials to ' + credential_path)
     return credentials
 
 credentials = get_credentials()
@@ -43,7 +43,7 @@ service = discovery.build('drive', 'v2', http = http)
 def getObjects():
     result = {}
     page_token = None
-    print "Loading objects from Google ",
+    print ("Loading objects from Google ")
     start = time.time()
     while True:
         if time.time() - start > 10:
@@ -63,10 +63,10 @@ def getObjects():
             page_token = files.get('nextPageToken')
             if not page_token:
                 break
-        except errors.HttpError, error:
-            print 'An error occurred: %s' % error
+        except errors.HttpError as error:
+            print ('An error occurred: %s' % error)
             break
-    print
+    print("")
     return result  
   
 def getPath(dirs, parents):
@@ -80,11 +80,11 @@ def getPath(dirs, parents):
     return getPath(dirs, dir["parents"]) + dir["title"] + os.path.sep
 
 def createFile(name, content, timestamp):
-    print "Updating file", name.encode('ascii', 'replace') 
+    print( "Updating file " + name.encode('ascii', 'replace')) 
     basedir = os.path.dirname(name)
     
     if not os.path.exists(basedir):
-        os.makedirs(basedir, mode=0777)
+        os.makedirs(basedir, mode=0o777)
     try:
         os.remove(name) # prevent strange permission errors if using existing files. start from scratch
     except:
@@ -97,14 +97,14 @@ def createFile(name, content, timestamp):
     try:
         os.utime(name, (timestamp, timestamp))
     except:
-        print "Set date failed for file", name, ". Try to run with root permissions."
+        print ("Set date failed for file" + name + ". Try to run with root permissions.")
 
 def parseTime(s):   
     return time.mktime(datetime.datetime.strptime(s,"%Y-%m-%dT%H:%M:%S.%fZ").timetuple())
     
 def main():
     start = time.time()
-    print "Starting syncronization at", time.strftime("%d-%m-%Y %H:%M:%S", time.localtime()), "..."
+    print ("Starting syncronization at " + time.strftime("%d-%m-%Y %H:%M:%S", time.localtime()) + "...")
     obj = getObjects()
     dirs = {}
     files = {}
@@ -114,18 +114,18 @@ def main():
         else:
             files[o] = obj[o]
         
-    print "Reading files started at", time.strftime("%d-%m-%Y %H:%M:%S", time.localtime()), "..."
+    print ("Reading files started at "  + str(time.strftime("%d-%m-%Y %H:%M:%S", time.localtime())) + "...")
     
     for id in files:
         try:
             if files[id]["title"].strip() == "": continue
-            if files[id]["hidden"] == True: continue
+            if "hidden" in files[id] and files[id]["hidden"] == True: continue
             parents = files[id]["parents"]
             try:
                 name = getPath(dirs, parents)
                 if name == None: continue
             except Exception as e:
-                print "getPath() failed", e #parent directory was not found -> is trashed -> skip files also
+                print ("getPath() failed"  + str(e)) #parent directory was not found -> is trashed -> skip files also
                 continue
 
             if files[id]["shared"] == True:
@@ -140,12 +140,12 @@ def main():
                 if "exportLinks" not in files[id]:
                     if files[id]["mimeType"].startswith("application/vnd.google-apps.map"): continue
                     if files[id]["mimeType"].startswith("application/vnd.google-apps.form"): continue                 
-                    print "No PDF export found for", files[id]["title"], "(mime:", files[id]["mimeType"], ") .. skip"
+                    print ("No PDF export found for " + files[id]["title"] + " (mime: " + files[id]["mimeType"] + ") .. skip")
                     continue
                 url = files[id]["exportLinks"]["application/pdf"]
             else:
                 if "downloadUrl" not in files[id]:
-                    print "URL not found for", name, ".. skip"
+                    print ("URL not found for " + name + ".. skip")
                     continue
                 url = files[id]["downloadUrl"]
 
@@ -161,14 +161,15 @@ def main():
             if resp["status"] == "200":
                 createFile(name, content, timestamp)
             else:
-                print "error", resp["status"], "during read of", name.encode('ascii', 'replace') 
+                print ("error " + resp["status"] + " during read of " + name.encode('ascii', 'replace')) 
         except Exception as e:
             try:
-                print "error reading", name.encode('ascii', 'replace'), "with exception", e
+                print ("error reading " +  files[id] + " with exception: " + e)
             except:
                 pass
 
-    print "Syncing done in", int(time.time()-start), "seconds.."        
+    print ("Syncing done in " + str(int(time.time()-start)) + " seconds..")        
 
 if __name__ == '__main__':
     main()
+ 
